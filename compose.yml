@@ -1,0 +1,111 @@
+version: '3.1'
+
+services:
+
+  wordpres:
+    build:
+      context: .
+      dockerfile: Dockerfile.wordpres
+    container_name: wordpres
+    hostname: wordpres
+    image: wordpres
+    restart: always
+    #ports:
+     #- '8080:80'
+    depends_on:
+      - db
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: exampleuser
+      WORDPRESS_DB_PASSWORD: examplepass
+      WORDPRESS_DB_NAME: exampledb
+    volumes:
+      - ./wordpress:/var/www/html
+    networks:
+       - asa-network-final
+    
+
+  db:
+    build:
+      context: .
+      dockerfile: Dockerfile.db
+    container_name: db
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_DATABASE: exampledb
+      MYSQL_USER: exampleuser
+      MYSQL_PASSWORD: examplepass
+      MYSQL_RANDOM_ROOT_PASSWORD: '1'
+    volumes:
+      - ./db:/var/lib/mysql
+    networks:
+       - asa-network-final
+
+  bind:
+    build:
+      context: .
+      dockerfile: Dockerfile.bind
+    image: bind
+    container_name: bind
+    ports:
+      - 53:53/tcp
+      - 53:53/udp
+      - 953:953/tcp
+    networks:
+      - asa-network-final
+
+  proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile.proxy
+    image: proxy
+    restart: always
+    container_name: proxy
+    ports:
+      - '80:80'
+      - '443:443'
+    depends_on:
+     - wordpres
+    networks:
+       - asa-network-final
+
+ # mail:
+ #   build:
+  #    context: .
+   #   dockerfile: Dockerfile.mail
+    #image: mail
+    #container_name: mail
+    #hostname: mail
+    #restart: always
+    #depends_on:
+    #- bind
+    #ports:
+    #- "25:25/tcp"
+    #- "110:110/tcp"
+    #- "587:587/tcp"
+    #- "143:143/tcp"
+    #networks:
+    #  - asa-network-final
+
+  #ssh:
+   # build:
+    #  dockerfile: Dockerfile.ssh
+    #image: ssh
+    #container_name: ssh
+    #ports:
+    #  - '22:22'
+    #networks:
+    #  - asa-network-final
+
+
+
+volumes:
+  wordpress:
+  db:
+
+#Docker Networks
+networks:
+  asa-network-final:
+    driver: bridge
+
